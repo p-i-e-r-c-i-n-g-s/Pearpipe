@@ -1,4 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="12" fill="#1B1714"/>
-  <text x="32" y="46" font-family="'JetBrains Mono', ui-monospace, monospace" font-size="40" font-weight="700" text-anchor="middle" fill="#FF4F00">A</text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" role="img" aria-label="pearpipe logo, small size"><rect width="100" height="100" rx="21.88" fill="#100D0A"/><path d="M22 50Q60 36 78 50" fill="none" stroke="#FF4F00" stroke-width="4" stroke-linecap="round" opacity="0.45"/><path d="M22 50Q60 50 78 50" fill="none" stroke="#FF4F00" stroke-width="4" stroke-linecap="round" opacity="1.0"/><path d="M22 50Q60 64 78 50" fill="none" stroke="#FF4F00" stroke-width="4" stroke-linecap="round" opacity="0.45"/><circle cx="19" cy="50" r="7" fill="#ECE6DC"/><circle cx="81" cy="50" r="7" fill="#ECE6DC"/></svg>
