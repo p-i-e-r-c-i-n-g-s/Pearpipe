@@ -67,6 +67,23 @@ func (rm *RoomManager) DeleteRoom(token string) {
 	delete(rm.rooms, token)
 }
 
+// deleteRoomIfEmpty drops token only while the map still holds this exact room
+// and nobody is left in it, so a client that joined the token in the meantime
+// does not lose its room.
+func (rm *RoomManager) deleteRoomIfEmpty(token string, room *Room) {
+	rm.mu.Lock()
+	defer rm.mu.Unlock()
+	if current, exists := rm.rooms[token]; !exists || current != room {
+		return
+	}
+	room.mu.Lock()
+	empty := len(room.clients) == 0
+	room.mu.Unlock()
+	if empty {
+		delete(rm.rooms, token)
+	}
+}
+
 func (rm *RoomManager) ActiveRooms() int {
 	rm.mu.RLock()
 	defer rm.mu.RUnlock()

@@ -129,12 +129,14 @@ func (p *Peer) attachDataChannel(dc *webrtc.DataChannel) {
 }
 
 func (p *Peer) deliver(data []byte) {
+	// hold the lock across the send: closeIncoming must not be able to close
+	// p.incoming between the check and the send, which panics the SCTP reader.
+	// Close() closes p.closed first, so a blocked send here always unwinds.
 	p.incomingMu.Lock()
+	defer p.incomingMu.Unlock()
 	if p.incClosed {
-		p.incomingMu.Unlock()
 		return
 	}
-	p.incomingMu.Unlock()
 	select {
 	case p.incoming <- data:
 	case <-p.closed:

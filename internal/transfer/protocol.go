@@ -60,7 +60,9 @@ func DecodeMessage(data []byte) (Message, error) {
 	}
 	msgType := MessageType(data[0])
 	payloadLen := binary.BigEndian.Uint32(data[1:5])
-	if len(data) < int(5+payloadLen) {
+	// widen before adding: 5+payloadLen wraps in uint32 for a header claiming
+	// a near-max length, which would slip past the check and slice out of range
+	if uint64(len(data)) < 5+uint64(payloadLen) {
 		return Message{}, errors.New("incomplete message")
 	}
 	return Message{
