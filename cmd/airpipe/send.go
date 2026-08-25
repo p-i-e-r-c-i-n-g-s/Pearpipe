@@ -134,8 +134,9 @@ func resolveMode(flagVal string) (string, error) {
 	if flagVal != "" {
 		return "", fmt.Errorf("invalid --mode %q (use p2p or mailbox)", flagVal)
 	}
-	stat, _ := os.Stdin.Stat()
-	if stat.Mode()&os.ModeCharDevice == 0 {
+	stat, statErr := os.Stdin.Stat()
+	// no usable stdin (closed fd, or a pipe) means there is nobody to prompt
+	if statErr != nil || stat.Mode()&os.ModeCharDevice == 0 {
 		return "mailbox", nil
 	}
 	fmt.Printf("\n  Mode?\n")
