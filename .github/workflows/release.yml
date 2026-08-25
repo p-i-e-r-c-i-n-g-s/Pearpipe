@@ -25,14 +25,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Publishes to THIS fork's namespace, not upstream's
+      # (ghcr.io/sanyam-g/airpipe-relay). secrets.GITHUB_TOKEN is scoped to
+      # this repository, so it can never write to another account's
+      # packages -- pushing to the inherited name failed on every push to
+      # main. Keep this pointed at p-i-e-r-c-i-n-g-s when merging upstream.
       - name: Compute image tags and version
         id: tags
         run: |
-          tags="ghcr.io/sanyam-g/airpipe-relay:latest"
+          tags="ghcr.io/p-i-e-r-c-i-n-g-s/pearpipe-relay:latest"
           version="main-${GITHUB_SHA::7}"
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             version="${GITHUB_REF#refs/tags/}"
-            tags="${tags},ghcr.io/sanyam-g/airpipe-relay:${version}"
+            tags="${tags},ghcr.io/p-i-e-r-c-i-n-g-s/pearpipe-relay:${version}"
           fi
           echo "tags=${tags}" >> "$GITHUB_OUTPUT"
           echo "version=${version}" >> "$GITHUB_OUTPUT"
