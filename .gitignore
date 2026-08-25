@@ -3,3 +3,11 @@
 /airpipe-*
 *.exe
 /tmp/
+
+# Local environment files. This repository is PUBLIC, and the relay reads
+# its config from the environment (AIRPIPE_RELAY, AIRPIPE_ALLOWED_ORIGINS,
+# rate/size limits), so an .env here would be a credential-shaped file one
+# `git add -A` away from being published.
+.env
+.env.*
+!.env.example
