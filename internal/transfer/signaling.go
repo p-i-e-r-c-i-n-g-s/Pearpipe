@@ -104,6 +104,14 @@ func negotiateSender(ctx context.Context, conn *websocket.Conn, key []byte) (*p2
 		}
 	}()
 
+	// the trickle writer shares conn with this goroutine and with whatever the
+	// caller writes next; wait for it to stop before returning, or two
+	// goroutines write frames to one websocket at once
+	stopTrickle := func() {
+		peer.Close()
+		<-trickleDone
+	}
+
 	openCh := make(chan struct{})
 	go func() {
 		_ = peer.WaitOpen(negCtx)
@@ -114,7 +122,7 @@ func negotiateSender(ctx context.Context, conn *websocket.Conn, key []byte) (*p2
 		select {
 		case <-openCh:
 			if !peer.IsOpen() {
-				peer.Close()
+				stopTrickle()
 				return nil, fmt.Errorf("datachannel did not open within %s", NegotiateTimeout)
 			}
 			cancel()
@@ -122,27 +130,27 @@ func negotiateSender(ctx context.Context, conn *websocket.Conn, key []byte) (*p2
 			return peer, nil
 		case r, ok := <-reads:
 			if !ok {
-				peer.Close()
+				stopTrickle()
 				return nil, fmt.Errorf("signaling channel closed")
 			}
 			if r.err != nil {
-				peer.Close()
+				stopTrickle()
 				return nil, fmt.Errorf("read signal: %w", r.err)
 			}
 			switch r.msg.Type {
 			case MsgTypeSDPAnswer:
 				if err := peer.SetRemoteAnswer(negCtx, string(r.msg.Payload)); err != nil {
-					peer.Close()
+					stopTrickle()
 					return nil, fmt.Errorf("set remote answer: %w", err)
 				}
 			case MsgTypeICECandidate:
 				_ = peer.AddICECandidate(r.msg.Payload)
 			case MsgTypeP2PFail:
-				peer.Close()
+				stopTrickle()
 				return nil, fmt.Errorf("peer reported p2p failure: %s", string(r.msg.Payload))
 			}
 		case <-negCtx.Done():
-			peer.Close()
+			stopTrickle()
 			return nil, negCtx.Err()
 		}
 	}
@@ -196,6 +204,14 @@ func negotiateReceiver(ctx context.Context, conn *websocket.Conn, key []byte, of
 		}
 	}()
 
+	// the trickle writer shares conn with this goroutine and with whatever the
+	// caller writes next; wait for it to stop before returning, or two
+	// goroutines write frames to one websocket at once
+	stopTrickle := func() {
+		peer.Close()
+		<-trickleDone
+	}
+
 	openCh := make(chan struct{})
 	go func() {
 		_ = peer.WaitOpen(negCtx)
@@ -216,11 +232,11 @@ func negotiateReceiver(ctx context.Context, conn *websocket.Conn, key []byte, of
 			dcOpen = true
 		case r, ok := <-reads:
 			if !ok {
-				peer.Close()
+				stopTrickle()
 				return nil, nil, nil, fmt.Errorf("signaling channel closed")
 			}
 			if r.err != nil {
-				peer.Close()
+				stopTrickle()
 				stopReader()
 				return nil, nil, nil, fmt.Errorf("read signal: %w", r.err)
 			}
@@ -230,12 +246,12 @@ func negotiateReceiver(ctx context.Context, conn *websocket.Conn, key []byte, of
 			case MsgTypeP2PReady:
 				p2pReady = true
 			case MsgTypeP2PFail:
-				peer.Close()
+				stopTrickle()
 				return nil, tailReader(reads), stopReader, ErrPeerP2PFail
 			}
 		case <-negCtx.Done():
 			// our timer fired before the sender's P2P_FAIL arrived, fall back to ws anyway
-			peer.Close()
+			stopTrickle()
 			return nil, tailReader(reads), stopReader, ErrPeerP2PFail
 		}
 	}

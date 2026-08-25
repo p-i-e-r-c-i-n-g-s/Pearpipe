@@ -92,8 +92,10 @@ func cmdUpdate() error {
 	} else {
 		// Need sudo: remove old binary, move new one in
 		fmt.Printf("  Need sudo to update %s\n", execPath)
+		// paths go in as arguments, not interpolated: a path with a space would
+		// otherwise word-split into an rm of something else entirely
 		cmd := exec.Command("sudo", "sh", "-c",
-			fmt.Sprintf("rm -f %s && mv %s %s", execPath, tmpPath, execPath))
+			`rm -f "$1" && mv "$2" "$1"`, "sh", execPath, tmpPath)
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
