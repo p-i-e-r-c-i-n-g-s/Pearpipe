@@ -78,6 +78,14 @@ func (fs *FileStore) Store(filename string, r io.Reader, clientToken string) (st
 	}
 
 	fs.mu.Lock()
+	// re-check under the write lock: the read above is only a fast path, and two
+	// concurrent uploads of the same token would otherwise both be accepted,
+	// leaving one blob orphaned on disk and the other's mailbox overwritten
+	if _, exists := fs.files[token]; exists {
+		fs.mu.Unlock()
+		os.Remove(tmp.Name())
+		return "", errTokenExists
+	}
 	fs.files[token] = &StoredFile{
 		Path:      tmp.Name(),
 		Filename:  filename,
