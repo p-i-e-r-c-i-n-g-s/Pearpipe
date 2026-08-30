@@ -11,3 +11,8 @@
 .env
 .env.*
 !.env.example
+
+# Wrangler local secrets. Never committed -- this is where a DISCOGS_TOKEN
+# or equivalent would land during `wrangler dev`.
+.dev.vars
+.dev.vars.*
